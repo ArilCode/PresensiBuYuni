@@ -209,7 +209,7 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
     }).catch(function () {
       showError("Gagal membuat file Excel. Periksa internet lalu coba lagi.");
-    }).then(function () { btn.disabled = false; btn.textContent = "⬇ Excel"; });
+    }).then(function () { btn.disabled = false; btn.textContent = "Unduh"; });
   });
 
   // ---------- MULAI: langsung tampilkan hari ini ----------
