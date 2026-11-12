@@ -24,14 +24,15 @@ p{margin:.4rem 0}
 .brand{flex:1;min-width:140px}
 .brand h1{font-size:1.05rem}
 .brand p{margin:0;font-size:.8rem;opacity:.9}
-.nav{display:flex;gap:.3rem}
-.nav-btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:.4rem .9rem;font:inherit;font-size:.9rem;cursor:pointer}
+.nav{display:flex;gap:.4rem;order:3;width:100%;overflow-x:auto;flex-wrap:nowrap;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:.1rem 0 .15rem}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{flex:none;scroll-snap-align:center;white-space:nowrap;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:.4rem .9rem;font:inherit;font-size:.9rem;cursor:pointer}
 .nav-btn.active{background:#fff;color:var(--primary-d);border-color:#fff;font-weight:700}
 
 .wrap{width:100%;max-width:960px;margin:0 auto;padding:1rem;flex:1}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 
-.filter{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:.7rem;align-items:end;margin-top:.8rem}
+.filter{display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:.7rem;align-items:end;margin-top:.8rem}
 .filter label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:.25rem}
 select,input,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.6rem .7rem;width:100%;min-height:44px}
 select:focus,input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 45%,transparent);outline-offset:1px}
@@ -47,10 +48,6 @@ select:focus,input:focus,textarea:focus,button:focus-visible,a:focus-visible{out
 .hasil-head h2{margin:0}
 .chip{background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary-d);border-radius:999px;padding:.15rem .7rem;font-size:.82rem;font-weight:700;white-space:nowrap}
 
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.95rem}
-th,td{text-align:left;padding:.6rem .7rem;border-bottom:1px solid var(--line)}
-th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:color-mix(in srgb,var(--primary) 6%,transparent)}
 .badge{display:inline-block;padding:.12rem .65rem;border-radius:999px;font-weight:700;font-size:.82rem;color:#fff}
 .badge.hadir{background:var(--hadir)}.badge.sakit{background:var(--sakit)}.badge.izin{background:var(--izin)}.badge.alfa{background:var(--alfa)}
 
@@ -64,11 +61,47 @@ th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut
 
 @media (max-width:700px){
   .filter{grid-template-columns:1fr 1fr}
-  .filter .btn{grid-column:1/-1}
-  /* tabel jadi kartu di layar kecil */
-  thead{position:absolute;left:-9999px}
-  table,tbody,tr,td{display:block;width:100%}
-  tr{border:1px solid var(--line);border-radius:12px;margin-bottom:.7rem;padding:.4rem .2rem}
-  td{border:0;display:flex;justify-content:space-between;gap:1rem;padding:.3rem .7rem}
-  td::before{content:attr(data-label);font-weight:700;color:var(--muted);font-size:.82rem}
+  .filter .f-nama,.filter .f-btns{grid-column:1/-1}
+
 }
+
+/* ===== tabel data (lebar kolom mengikuti isi) ===== */
+.f-btns{display:flex;gap:.5rem}
+.f-btns .btn{white-space:nowrap}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:max-content;min-width:100%;font-size:.93rem}
+th,td{text-align:left;padding:.55rem .8rem;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{background:var(--primary);color:#fff;font-size:.82rem;letter-spacing:.05em}
+tbody tr:nth-child(even){background:color-mix(in srgb,var(--primary) 5%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+td:first-child,th:first-child{text-align:center}
+@media (prefers-color-scheme:dark){th{color:#04130e}}
+
+/* ===== menu: HP = bar geser (swipe), layar lebar = navbar di atas ===== */
+.nav-btn{padding:.5rem 1rem;min-height:40px}
+.nav-btn:hover{background:rgba(255,255,255,.18)}
+.nav-btn.active:hover{background:#fff}
+@media (min-width:900px){
+  .top-inner{flex-wrap:nowrap;padding:.7rem 1.2rem}
+  .nav{order:0;width:auto;overflow:visible;gap:.2rem;padding:0}
+  .nav-btn{border:0;border-radius:8px;padding:.5rem .9rem}
+  .nav-btn.active{border-radius:8px}
+  .brand{flex:1}
+  .brand h1{font-size:1.2rem}
+}
+
+/* ===== catatan hari ===== */
+.note{background:color-mix(in srgb,var(--accent) 12%,var(--card));border:1px solid var(--accent);border-radius:var(--radius);padding:.8rem 1rem;margin-bottom:1rem}
+.note p{margin:.2rem 0 0;white-space:pre-wrap;word-break:break-word}
+td.ket{white-space:normal;min-width:12ch;max-width:48ch}
+
+/* ===== banner info (kartu, di dalam konten) ===== */
+.infobar{display:flex;gap:.75rem;align-items:flex-start;margin:0 0 1rem;padding:.8rem .8rem .8rem .9rem;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 15%,var(--card)),var(--card));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-left:5px solid var(--accent);box-shadow:var(--shadow);animation:infoin .35s ease}
+.info-ico{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:1.1rem}
+.info-body{flex:1;min-width:0}
+.info-body strong{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.info-text{margin:.1rem 0 0;white-space:pre-wrap;word-break:break-word;font-weight:600;line-height:1.45}
+.info-x{flex:none;background:none;border:0;color:var(--muted);font-size:1rem;cursor:pointer;padding:.35rem .5rem;border-radius:8px;min-height:36px;min-width:36px}
+.info-x:hover{background:var(--line)}
+@keyframes infoin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.infobar{animation:none}}

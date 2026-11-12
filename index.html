@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Presensi Bu Yuni — Data Presensi Sholat</title>
+  <title>Presensi Sholat</title>
   <meta name="description" content="Lihat data presensi (absensi) sholat siswa berdasarkan tanggal, bulan, dan tahun. Guru pembimbing: Yuni Puspitasari, S.Pd.">
   <meta name="theme-color" content="#047857">
   <link rel="canonical" href="https://presensi-bu-yuni.vercel.app/">
@@ -12,76 +12,112 @@
   <meta property="og:title" content="Presensi Bu Yuni — Data Presensi Sholat">
   <meta property="og:description" content="Lihat data presensi (absensi) sholat siswa berdasarkan tanggal, bulan, dan tahun.">
   <meta property="og:url" content="https://presensi-bu-yuni.vercel.app/">
-  <meta property="og:image" content="https://presensi-bu-yuni.vercel.app/og-image.png">
+  <meta property="og:image" content="https://presensi-bu-yuni.vercel.app/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="id_ID">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://presensi-bu-yuni.vercel.app/og-image.png">
+  <meta name="twitter:image" content="https://presensi-bu-yuni.vercel.app/images/og-image.png">
 
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="./images/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon-32.png">
+  <link rel="apple-touch-icon" href="./images/apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div id="banner" class="banner" hidden role="status"></div>
-
   <header class="top">
     <div class="top-inner">
-      <img src="icon-192.png" alt="" class="logo" width="40" height="40">
+      <img src="./images/icon-192.png" alt="" class="logo" width="40" height="40">
       <div class="brand">
         <h1>Presensi Bu Yuni</h1>
         <p>Data presensi sholat</p>
       </div>
-      <nav class="nav" aria-label="Menu">
-        <button class="nav-btn active" data-view="beranda" type="button">Beranda</button>
-        <button class="nav-btn" data-view="tentang" type="button">Tentang</button>
+      <nav class="nav" id="nav" aria-label="Menu">
+        <button class="nav-btn active" data-view="beranda" type="button">🏠 Beranda</button>
+        <button class="nav-btn" data-view="cara" type="button">📖 Cara Pakai</button>
+        <button class="nav-btn" data-view="lapor" type="button">🛠 Laporkan Masalah</button>
+        <button class="nav-btn" data-view="tentang" type="button">ℹ️ Tentang</button>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
+    <div id="banner" class="infobar" hidden role="status">
+      <span class="info-ico" aria-hidden="true">📢</span>
+      <div class="info-body"><strong>Info</strong><p class="info-text"></p></div>
+      <button class="info-x" type="button" aria-label="Tutup info">✕</button>
+    </div>
+
     <!-- ================= BERANDA ================= -->
     <section id="view-beranda" class="view">
       <div class="card">
         <h2>Cari data presensi</h2>
-        <p class="muted">Pilih <strong>bulan</strong> dan <strong>tahun</strong>. Tanggal boleh dikosongkan untuk melihat satu bulan penuh.</p>
+        <p class="muted">Otomatis menampilkan data <strong>hari ini</strong>. Pilih tanggal lain, kelas, atau ketik nama untuk menyaring.</p>
         <form id="filter" class="filter" novalidate>
           <label>Tanggal
-            <select id="f-tanggal"><option value="">Semua tanggal</option></select>
+            <input type="date" id="f-tanggal" required>
           </label>
-          <label>Bulan
-            <select id="f-bulan" required><option value="">Pilih bulan</option></select>
+          <label>Kelas
+            <select id="f-kelas"><option value="">Semua kelas</option></select>
           </label>
-          <label>Tahun
-            <select id="f-tahun" required><option value="">Pilih tahun</option></select>
+          <label class="f-nama">Nama
+            <input type="search" id="f-nama" placeholder="Ketik nama siswa…" autocomplete="off" maxlength="60">
           </label>
-          <button type="submit" class="btn primary" id="f-btn">Tampilkan</button>
+          <div class="f-btns">
+            <button type="button" class="btn" id="f-reset">Hari ini</button>
+            <button type="button" class="btn primary" id="f-xlsx">Unduh</button>
+          </div>
         </form>
         <p id="f-error" class="error" role="alert" hidden></p>
       </div>
 
-      <div id="placeholder" class="empty">
-        <div class="empty-ico" aria-hidden="true">🔎</div>
-        <p>Data disembunyikan.<br>Pilih bulan &amp; tahun lalu tekan <strong>Tampilkan</strong>.</p>
+      <div id="catatan" class="note" hidden>
+        <strong>📝 Catatan hari itu</strong>
+        <p id="catatan-isi"></p>
       </div>
 
-      <div id="hasil" class="card" hidden>
+      <div id="hasil" class="card">
         <div class="hasil-head">
-          <h2 id="hasil-judul">Hasil</h2>
+          <h2 id="hasil-judul">Presensi</h2>
           <span id="hasil-jumlah" class="chip"></span>
         </div>
         <div class="table-wrap">
           <table id="tabel">
             <thead>
-              <tr><th>No</th><th>Nama</th><th>Hari</th><th>Tanggal</th><th>Bulan</th><th>Tahun</th><th>Status</th></tr>
+              <tr><th>NO</th><th>NAMA</th><th>KELAS</th><th>STATUS</th><th>TANGGAL</th><th>KETERANGAN</th></tr>
             </thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
-        <p id="kosong" class="empty-text" hidden>Tidak ada data presensi pada waktu yang dipilih.</p>
+        <p id="kosong" class="empty-text" hidden>Tidak ada data presensi dengan filter ini.</p>
+        <p id="memuat" class="empty-text">Memuat data…</p>
+      </div>
+    </section>
+
+    <!-- ================= CARA PAKAI ================= -->
+    <section id="view-cara" class="view" hidden>
+      <div class="card">
+        <h2>Cara menggunakan</h2>
+        <ol class="steps">
+          <li>Buka menu <strong>Beranda</strong> — data <strong>hari ini</strong> langsung tampil.</li>
+          <li>Pilih <strong>tanggal</strong> lain untuk melihat hari yang berbeda.</li>
+          <li>Saring dengan <strong>kelas</strong> atau ketik <strong>nama</strong> siswa.</li>
+          <li>Kolom <strong>Keterangan</strong> berisi alasan jika status <strong>Izin</strong>.</li>
+          <li>Jika ada <strong>Catatan</strong> di atas tabel, itu alasan/keterangan hari tersebut (mis. tidak ada yang sholat karena libur).</li>
+          <li>Tekan <strong>Excel</strong> untuk mengunduh data yang sedang tampil.</li>
+          <li>Arti status: <span class="badge hadir">Hadir</span> <span class="badge sakit">Sakit</span> <span class="badge izin">Izin</span> <span class="badge alfa">Alfa</span></li>
+        </ol>
+        <p class="muted">Hanya data hari ini yang tampil di awal; tanggal lain baru muncul setelah kamu memilihnya — demi menjaga privasi.</p>
+      </div>
+    </section>
+
+    <!-- ================= LAPORKAN MASALAH ================= -->
+    <section id="view-lapor" class="view" hidden>
+      <div class="card">
+        <h2>Laporkan masalah</h2>
+        <p>Menemukan data yang salah atau web yang error? Kirim laporan lewat email atau media sosial di bawah. Sertakan tanggal yang dilihat dan foto layar bila ada.</p>
+        <div class="links" id="t-report"></div>
       </div>
     </section>
 
@@ -92,25 +128,6 @@
         <p>Web ini dipakai untuk melihat <strong>presensi (absensi) sholat</strong> siswa. Data diinput oleh guru/pengelola melalui web terpisah, lalu ditampilkan di sini.</p>
         <p class="muted">Guru pembimbing: <strong id="t-guru"></strong></p>
       </div>
-
-      <div class="card">
-        <h2>Cara menggunakan</h2>
-        <ol class="steps">
-          <li>Buka menu <strong>Beranda</strong>.</li>
-          <li>Pilih <strong>bulan</strong> dan <strong>tahun</strong>. Pilih <strong>tanggal</strong> jika ingin satu hari saja.</li>
-          <li>Tekan tombol <strong>Tampilkan</strong>.</li>
-          <li>Daftar presensi muncul, nama diurutkan sesuai abjad.</li>
-          <li>Arti status: <span class="badge hadir">Hadir</span> <span class="badge sakit">Sakit</span> <span class="badge izin">Izin</span> <span class="badge alfa">Alfa</span></li>
-        </ol>
-        <p class="muted">Data tidak tampil sebelum kamu memilih bulan &amp; tahun — ini disengaja demi menjaga privasi.</p>
-      </div>
-
-      <div class="card">
-        <h2>Laporkan masalah</h2>
-        <p>Menemukan data yang salah atau web yang error? Kirim laporan lewat email atau media sosial di bawah. Sertakan tanggal yang dilihat dan foto layar bila ada.</p>
-        <div class="links" id="t-report"></div>
-      </div>
-
       <div class="card">
         <h2>Pengembang</h2>
         <p>Development by <strong id="t-dev"></strong></p>
