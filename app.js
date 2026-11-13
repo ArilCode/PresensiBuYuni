@@ -109,7 +109,12 @@
     $("memuat").hidden = false; $("kosong").hidden = true; $("tabel").hidden = true;
     $("hasil-judul").textContent = "Presensi " + tglPanjang(tanggal);
     $("hasil-jumlah").textContent = "";
-    $("catatan").hidden = true;
+    $("catatan").hidden = true; $("libur-info").hidden = true;
+    sb.rpc("alasan_libur", { p_tanggal: tanggal }).then(function (c) {
+      if (id !== state.reqId) return;
+      var t = c && typeof c.data === "string" ? c.data.trim() : "";
+      $("libur-isi").textContent = t; $("libur-info").hidden = !t;
+    });
     sb.rpc("get_catatan_hari", { p_tanggal: tanggal }).then(function (c) {
       if (id !== state.reqId) return;
       var t = c && typeof c.data === "string" ? c.data.trim() : "";

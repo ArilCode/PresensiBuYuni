@@ -105,3 +105,9 @@ td.ket{white-space:normal;min-width:12ch;max-width:48ch}
 .info-x:hover{background:var(--line)}
 @keyframes infoin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.infobar{animation:none}}
+
+/* ===== info hari libur ===== */
+.liburinfo{display:flex;gap:.75rem;align-items:flex-start;margin-bottom:1rem;padding:.8rem .9rem;border-radius:var(--radius);border:1px solid var(--danger);border-left:5px solid var(--danger);background:color-mix(in srgb,var(--danger) 9%,var(--card))}
+.libur-ico{flex:none;font-size:1.5rem;line-height:1}
+.liburinfo strong{color:var(--danger)}
+.liburinfo p{margin:.15rem 0 0;font-weight:600}
