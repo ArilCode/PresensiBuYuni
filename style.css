@@ -120,3 +120,64 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .btn.opt[disabled]{opacity:.55}
 .toast{position:fixed;left:50%;bottom:calc(1.2rem + env(safe-area-inset-bottom));transform:translateX(-50%);background:#12261f;color:#fff;padding:.65rem 1.1rem;border-radius:999px;font-weight:600;font-size:.92rem;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:50;max-width:92vw;text-align:center}
 .small{font-size:.85rem}
+
+
+/* =====================================================================
+   RESPONSIF — HP kecil → HP → tablet → laptop → layar lebar
+   ===================================================================== */
+:root{--wrap:960px}
+.top-inner,.wrap{max-width:var(--wrap)}
+img{max-width:100%;height:auto}
+.brand{min-width:0}
+.brand h1,.brand p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* HP sangat kecil (<= 360px) */
+@media (max-width:360px){
+  .wrap{padding:.7rem}
+  .card{padding:.8rem}
+  .brand h1{font-size:.95rem}
+  .logo{width:34px;height:34px}
+  .nav-btn{padding:.45rem .8rem;font-size:.85rem;min-height:38px}
+  .filter{grid-template-columns:1fr}
+  .f-btns .btn{flex:1 1 40%}
+  th,td{padding:.5rem .6rem;font-size:.85rem}
+  .hasil-head{flex-wrap:wrap}
+}
+
+/* HP landscape / layar pendek: header tidak menempel */
+@media (max-height:520px) and (orientation:landscape){
+  .top{position:static}
+}
+
+/* Tablet (>= 700px) */
+@media (min-width:700px){
+  .wrap{padding:1.2rem}
+  .f-btns{flex-wrap:nowrap}
+  #view-cara .card,#view-lapor .card{max-width:820px}
+}
+
+/* Layar lebar (>= 1100px) */
+@media (min-width:1100px){
+  :root{--wrap:1200px}
+  .wrap{padding:1.5rem}
+  .top-inner{padding:.7rem 1.5rem}
+  table{font-size:1rem}
+  th,td{padding:.7rem 1rem}
+  #view-tentang{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+  #view-tentang .card{margin-bottom:0}
+}
+
+/* Layar sangat lebar (>= 1500px) */
+@media (min-width:1500px){
+  html{font-size:106%}
+  :root{--wrap:1320px}
+}
+
+/* tabel: kolom mengikuti isi.
+   HP: tabel digeser ke samping (baris tetap ringkas). Layar >= 700px: tabel pas selebar kartu,
+   kolom KETERANGAN boleh turun baris agar tidak melebar. */
+td.ket{white-space:nowrap}
+@media (min-width:700px){
+  table{width:100%;min-width:0}
+  td.ket{white-space:normal;min-width:16ch;max-width:none;overflow-wrap:anywhere}
+}
