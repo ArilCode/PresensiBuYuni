@@ -74,14 +74,29 @@
   function ket(r) { return String(r.status) === "Izin" && r.keterangan ? String(r.keterangan) : "-"; }
 
   // ---------- state ----------
-  var state = { all: [], view: [], tanggal: "", reqId: 0 };
+  var state = { all: [], view: [], tanggal: "", reqId: 0, loading: false };
+  var pendingKelas = null;
 
   // ---------- render tabel ----------
-  function render() {
+  function passFilter(r) {
     var kelas = $("f-kelas").value, nama = $("f-nama").value.trim().toLowerCase();
-    state.view = state.all.filter(function (r) {
-      return (!kelas || r.kelas === kelas) && (!nama || String(r.nama).toLowerCase().indexOf(nama) !== -1);
-    });
+    return (!kelas || r.kelas === kelas) && (!nama || String(r.nama).toLowerCase().indexOf(nama) !== -1);
+  }
+  // alamat web selalu mengikuti filter -> bisa disalin langsung dari address bar
+  function filterQuery() {
+    var q = new URLSearchParams();
+    q.set("tanggal", $("f-tanggal").value || state.tanggal);
+    if ($("f-kelas").value) q.set("kelas", $("f-kelas").value);
+    var n = $("f-nama").value.trim(); if (n) q.set("nama", n.slice(0, 60));
+    return q.toString();
+  }
+  function syncUrl() {
+    try { history.replaceState(null, "", location.pathname + "?" + filterQuery()); } catch (e) { /* abaikan */ }
+  }
+  function render() {
+    if (state.loading) return;
+    state.view = state.all.filter(passFilter);
+    syncUrl();
     var tbody = $("tbody"); tbody.innerHTML = "";
     $("hasil-judul").textContent = "Presensi " + tglPanjang(state.tanggal);
     $("hasil-jumlah").textContent = state.view.length + " data";
@@ -105,7 +120,7 @@
     showError("");
     if (!sb) { showError("Web belum disambungkan ke database. Isi file config.js terlebih dahulu."); $("memuat").hidden = true; return; }
     var id = ++state.reqId;
-    state.tanggal = tanggal;
+    state.tanggal = tanggal; state.loading = true;
     $("memuat").hidden = false; $("kosong").hidden = true; $("tabel").hidden = true;
     $("hasil-judul").textContent = "Presensi " + tglPanjang(tanggal);
     $("hasil-jumlah").textContent = "";
@@ -122,12 +137,14 @@
     });
     sb.rpc("get_presensi_hari", { p_tanggal: tanggal }).then(function (r) {
       if (id !== state.reqId) return;                         // abaikan jawaban lama
+      state.loading = false;
       $("memuat").hidden = true;
       if (r.error) { state.all = []; render(); $("kosong").hidden = true; showError("Gagal memuat data. Coba lagi sebentar lagi."); return; }
       state.all = r.data || [];
       render();
     }).catch(function () {
       if (id !== state.reqId) return;
+      state.loading = false;
       $("memuat").hidden = true; state.all = []; render(); $("kosong").hidden = true;
       showError("Tidak bisa terhubung. Periksa koneksi internetmu.");
     });
@@ -137,6 +154,11 @@
   if (sb) {
     sb.rpc("get_kelas").then(function (r) {
       (r.data || []).forEach(function (k) { var o = el("option", "", k.kelas); o.value = k.kelas; $("f-kelas").appendChild(o); });
+      if (pendingKelas) {
+        var ok = Array.prototype.some.call($("f-kelas").options, function (o) { return o.value === pendingKelas; });
+        if (ok) $("f-kelas").value = pendingKelas;
+        pendingKelas = null; render();
+      }
     });
   }
 
@@ -150,11 +172,18 @@
   $("f-kelas").addEventListener("change", render);
   $("f-nama").addEventListener("input", render);
   $("f-reset").addEventListener("click", function () {
-    $("f-tanggal").value = todayWIB(); $("f-kelas").value = ""; $("f-nama").value = "";
+    $("f-tanggal").value = todayWIB(); $("f-kelas").value = ""; $("f-nama").value = ""; $("shared-note").hidden = true;
     muat($("f-tanggal").value);
   });
 
-  // ---------- unduh Excel (ExcelJS dimuat saat dibutuhkan saja) ----------
+  // ---------- toast ----------
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2800);
+  }
+
+  // ---------- Excel (ExcelJS dimuat saat dibutuhkan saja) ----------
   function loadExcelJS() {
     return new Promise(function (resolve, reject) {
       if (window.ExcelJS) return resolve();
@@ -166,12 +195,8 @@
   }
   var WARNA = { Hadir: "FF047857", Sakit: "FFB45309", Izin: "FF1D4ED8", Alfa: "FFB91C1C" };
 
-  $("f-xlsx").addEventListener("click", function () {
-    showError("");
-    var rows = state.view.slice();
-    if (!rows.length) { showError("Tidak ada data untuk diunduh."); return; }
-    var btn = $("f-xlsx"); btn.disabled = true; btn.textContent = "Menyiapkan…";
-    loadExcelJS().then(function () {
+  function buatXlsx(rows, base) {
+    return loadExcelJS().then(function () {
       var wb = new window.ExcelJS.Workbook();
       var ws = wb.addWorksheet("Presensi", { views: [{ state: "frozen", ySplit: 1 }] });
       var head = ["NO", "NAMA", "KELAS", "STATUS", "TANGGAL", "KETERANGAN"];
@@ -202,22 +227,118 @@
       });
       ws.getRow(1).height = 24;
       ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 6 } };
-
       return wb.xlsx.writeBuffer();
     }).then(function (buf) {
       var kelas = $("f-kelas").value ? "_" + $("f-kelas").value.replace(/[^A-Za-z0-9]+/g, "-") : "";
       var blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "Presensi_" + state.tanggal + kelas + ".xlsx";
+      a.download = base + kelas + ".xlsx";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-    }).catch(function () {
-      showError("Gagal membuat file Excel. Periksa internet lalu coba lagi.");
-    }).then(function () { btn.disabled = false; btn.textContent = "Unduh"; });
+    });
+  }
+
+  // ambil data satu rentang tanggal (per halaman 1000 baris)
+  function fetchRange(dari, sampai) {
+    var all = [], page = 0, size = 1000;
+    function next() {
+      return sb.rpc("get_presensi_rentang", { p_dari: dari, p_sampai: sampai }).range(page * size, page * size + size - 1).then(function (r) {
+        if (r.error) throw r.error;
+        var d = r.data || []; all = all.concat(d);
+        if (d.length < size || all.length >= 20000) return all;
+        page++; return next();
+      });
+    }
+    return next();
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function scopeInfo(scope) {
+    var p = state.tanggal.split("-"), y = +p[0], m = +p[1];
+    if (scope === "bulan") return { dari: y + "-" + pad(m) + "-01", sampai: y + "-" + pad(m) + "-" + pad(new Date(y, m, 0).getDate()), base: "Presensi_" + y + "-" + pad(m) };
+    if (scope === "tahun") return { dari: y + "-01-01", sampai: y + "-12-31", base: "Presensi_" + y };
+    return { base: "Presensi_" + state.tanggal };
+  }
+  function filterText() {
+    var t = [], k = $("f-kelas").value, n = $("f-nama").value.trim();
+    if (k) t.push("Kelas " + k); if (n) t.push('Nama "' + n + '"');
+    return t.length ? "Filter: " + t.join(" • ") : "Semua kelas & semua nama";
+  }
+
+  var dlgU = $("unduhDlg");
+  $("f-xlsx").addEventListener("click", function () {
+    showError("");
+    if (!sb) { showError("Web belum disambungkan ke database."); return; }
+    var p = state.tanggal.split("-");
+    $("u-hari").textContent = "📅 Per tanggal — " + tglPanjang(state.tanggal);
+    $("u-bulan").textContent = "🗓 Per bulan — " + BULAN[+p[1] - 1] + " " + p[0];
+    $("u-tahun").textContent = "📆 Per tahun — " + p[0];
+    $("u-filter").textContent = filterText();
+    $("u-status").textContent = "";
+    dlgU.showModal();
+  });
+  $("u-tutup").addEventListener("click", function () { dlgU.close(); });
+  document.querySelectorAll("#unduhDlg .opt").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var scope = b.dataset.scope, info = scopeInfo(scope);
+      var btns = document.querySelectorAll("#unduhDlg .opt");
+      btns.forEach(function (x) { x.disabled = true; });
+      $("u-status").textContent = "Menyiapkan file…";
+      var job = scope === "hari" ? Promise.resolve(state.view.slice()) : fetchRange(info.dari, info.sampai).then(function (rows) { return rows.filter(passFilter); });
+      job.then(function (rows) {
+        if (!rows.length) { $("u-status").textContent = "Tidak ada data pada periode & filter ini."; return; }
+        return buatXlsx(rows, info.base).then(function () { $("u-status").textContent = ""; dlgU.close(); toast("File Excel diunduh (" + rows.length + " baris)"); });
+      }).catch(function () {
+        $("u-status").textContent = "Gagal membuat file. Periksa internet lalu coba lagi.";
+      }).then(function () { btns.forEach(function (x) { x.disabled = false; }); });
+    });
   });
 
-  // ---------- MULAI: langsung tampilkan hari ini ----------
-  $("f-tanggal").value = todayWIB();
-  muat($("f-tanggal").value);
+  // ---------- bagikan hasil filter ----------
+  function shareUrl() { return location.origin + location.pathname + "?" + filterQuery(); }
+  function shareText() {
+    var rows = state.view, cnt = {};
+    rows.forEach(function (r) { cnt[r.status] = (cnt[r.status] || 0) + 1; });
+    var ring = ["Hadir", "Sakit", "Izin", "Alfa"].filter(function (s) { return cnt[s]; }).map(function (s) { return s + " " + cnt[s]; }).join(", ");
+    return "Presensi " + tglPanjang($("f-tanggal").value || state.tanggal) + "\n" + filterText() + "\n" +
+      (rows.length ? rows.length + " data (" + ring + ")" : "Tidak ada data");
+  }
+  function salin(teks) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(teks);
+    return new Promise(function (resolve, reject) {
+      var t = document.createElement("textarea"); t.value = teks; t.setAttribute("readonly", "");
+      t.style.position = "fixed"; t.style.opacity = "0"; document.body.appendChild(t); t.select();
+      try { document.execCommand("copy") ? resolve() : reject(new Error("copy")); } catch (e) { reject(e); }
+      t.remove();
+    });
+  }
+  $("f-share").addEventListener("click", function () {
+    var url = shareUrl(), teks = shareText();
+    if (navigator.share) {
+      navigator.share({ title: "Presensi Bu Yuni", text: teks, url: url }).catch(function (e) {
+        if (e && e.name === "AbortError") return;           // dibatalkan pengguna
+        salin(teks + "\n" + url).then(function () { toast("Link disalin ✓"); }).catch(function () { window.prompt("Salin link ini:", url); });
+      });
+      return;
+    }
+    salin(teks + "\n" + url).then(function () { toast("Link disalin ✓ — tinggal tempel di chat"); })
+      .catch(function () { window.prompt("Salin link ini:", url); });
+  });
+
+  // ---------- MULAI: baca filter dari link (jika dibagikan), jika tidak tampilkan hari ini ----------
+  (function init() {
+    var qs = new URLSearchParams(location.search), shared = false;
+    var qt = qs.get("tanggal"), start = todayWIB();
+    if (qt && /^\d{4}-\d{2}-\d{2}$/.test(qt)) {
+      var d = new Date(+qt.slice(0, 4), +qt.slice(5, 7) - 1, +qt.slice(8, 10));
+      var okd = d.getFullYear() >= 2020 && d.getFullYear() <= 2100 && pad(d.getMonth() + 1) === qt.slice(5, 7) && pad(d.getDate()) === qt.slice(8, 10);
+      if (okd) { start = qt; shared = true; }
+    }
+    var qk = (qs.get("kelas") || "").slice(0, 30), qn = (qs.get("nama") || "").slice(0, 60);
+    if (qk) { pendingKelas = qk; shared = true; }
+    if (qn) { $("f-nama").value = qn; shared = true; }
+    $("shared-note").hidden = !shared;
+    $("f-tanggal").value = start;
+    muat(start);
+  })();
 })();

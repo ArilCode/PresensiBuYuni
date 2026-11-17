@@ -67,9 +67,11 @@
           <div class="f-btns">
             <button type="button" class="btn" id="f-reset">Hari ini</button>
             <button type="button" class="btn primary" id="f-xlsx">Unduh</button>
+            <button type="button" class="btn" id="f-share">Bagikan</button>
           </div>
         </form>
         <p id="f-error" class="error" role="alert" hidden></p>
+        <p id="shared-note" class="muted small" hidden>🔗 Kamu membuka hasil filter yang dibagikan. Ubah filter di atas bila perlu.</p>
       </div>
 
       <div id="libur-info" class="liburinfo" hidden role="status">
@@ -111,7 +113,8 @@
           <li>Jika tanggal yang dipilih <strong>Jumat</strong> (pulang cepat), <strong>Sabtu</strong> (tidak sekolah), <strong>Minggu</strong> (tanggal merah), atau <strong>hari libur</strong>, akan muncul kotak info beserta alasannya.</li>
           <li>Kolom <strong>Keterangan</strong> berisi alasan jika status <strong>Izin</strong>.</li>
           <li>Jika ada <strong>Catatan</strong> di atas tabel, itu alasan/keterangan hari tersebut (mis. tidak ada yang sholat karena libur).</li>
-          <li>Tekan <strong>Excel</strong> untuk mengunduh data yang sedang tampil.</li>
+          <li>Tekan <strong>Unduh</strong>, lalu pilih unduh per <strong>tanggal</strong>, per <strong>bulan</strong>, atau per <strong>tahun</strong> (mengikuti filter kelas &amp; nama).</li>
+          <li>Tekan <strong>Bagikan</strong> untuk mengirim hasil filter ke orang lain lewat link — yang membuka link akan melihat tanggal, kelas, dan nama yang sama.</li>
           <li>Arti status: <span class="badge hadir">Hadir</span> <span class="badge sakit">Sakit</span> <span class="badge izin">Izin</span> <span class="badge alfa">Alfa</span></li>
         </ol>
         <p class="muted">Hanya data hari ini yang tampil di awal; tanggal lain baru muncul setelah kamu memilihnya — demi menjaga privasi.</p>
@@ -141,6 +144,19 @@
       </div>
     </section>
   </main>
+
+  <dialog id="unduhDlg">
+    <h2>Unduh Excel</h2>
+    <p class="muted small" id="u-filter"></p>
+    <div class="opts">
+      <button type="button" class="btn opt" data-scope="hari" id="u-hari"></button>
+      <button type="button" class="btn opt" data-scope="bulan" id="u-bulan"></button>
+      <button type="button" class="btn opt" data-scope="tahun" id="u-tahun"></button>
+    </div>
+    <p id="u-status" class="muted small" role="status"></p>
+    <div class="opts"><button type="button" class="btn" id="u-tutup">Tutup</button></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <footer class="foot">
     <p>© <span id="tahun"></span> <span id="foot-dev"></span>. Semua hak dilindungi.</p>
